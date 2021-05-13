@@ -1,10 +1,10 @@
 import pandas as pd
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from utils import *
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import date
+from datetime import date, timedelta
 
 # Coords at 31 N, 87 W
 northwest_x = 130
@@ -13,6 +13,9 @@ northwest_y = 69
 # Coords at 25 N, 80 W
 southeast_x = 777
 southeast_y = 625
+
+textanchor_x = 324
+textanchor_y = 7
 
 file_path = 'PinellasMonroeCoKareniabrevis 2010-2020.06.12.xlsx'
 
@@ -46,6 +49,7 @@ for i in range(0, df.shape[0]):
 	year = importdate.year
 	month = importdate.month
 	day = importdate.day
+	print('Processing ' + str(month) + '/' + str(day) + '/' + str(year) + '...')
 	if(year == lastyear and month == lastmonth and day == lastday):
 		xs.append(x)
 		ys.append(y)
@@ -85,17 +89,21 @@ for i in range(0, df.shape[0]):
 					img1.ellipse([(xs[j]-radius, ys[j]-radius), (xs[j]+radius, ys[j]+radius)], fill=color, outline=color)
 					lifetimes[j] = lifetimes[j] - 1
 
-				im.save(out_folder+'/imagestr' + str(daynumber).zfill(3) + '.png')
+				currentdate = lastday + timedelta(days=k)
+				fnt = ImageFont.truetype("arial.ttf", 35)
+				img1.text((textanchor_x, textanchor_y), str(currentdate.month) + '/' + str(currentdate.day) + '/' + str(currentdate.year), font=fnt, fill=(0,0,0,255))
+				im.save(out_folder+'/image' + str(daynumber).zfill(5) + '.png')
 				daynumber = daynumber + 1
 				im.close()
 
 				#Remove samples with expired lifetimes
 				expired_inds = [inds for inds, lifetimes in enumerate(lifetimes) if lifetimes <= 0]
-				if(expired_inds != []):
+				while(expired_inds != []):
 					del xs[expired_inds[0]]
 					del ys[expired_inds[0]]
 					del redtide_concs[expired_inds[0]]
 					del lifetimes[expired_inds[0]]
+					expired_inds = [inds for inds, lifetimes in enumerate(lifetimes) if lifetimes <= 0]
 
 		xs.append(x)
 		ys.append(y)
@@ -104,15 +112,3 @@ for i in range(0, df.shape[0]):
 		lastyear = year
 		lastmonth = month
 		lastday = day
-	print(str(year) + ' ' + str(month) + ' ' + str(day))
-
-print(df.shape)
-print(df)
-
-im = Image.open('florida-map.jpg')
-
-img1 = ImageDraw.Draw(im)
-img1.ellipse([(northwest_x, northwest_y), (northwest_x+1, northwest_y+1)], fill='red', outline='red')
-img1.ellipse([(southeast_x, southeast_y), (southeast_x+1, southeast_y+1)], fill='red', outline='red')
-
-im.save('test.png')
